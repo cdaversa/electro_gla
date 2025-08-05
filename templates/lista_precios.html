@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+{% block title %}Lista de Precios{% endblock %}
+{% block content %}
+<h2>Lista de Precios</h2>
+
+<input type="text" id="buscador" class="form-control mb-3" placeholder="🔍 Buscar producto...">
+
+<!-- 🔹 Contenedor con scroll -->
+<div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd;">
+<table class="table table-striped" id="tabla-precios">
+<thead class="table-dark" style="position: sticky; top: 0;">
+<tr>
+    <th>Nombre</th>
+    <th>Cantidad en Stock</th>
+    <th>Precio Venta</th>
+</tr>
+</thead>
+<tbody>
+{% for p in lista %}
+<tr data-nombre="{{ p['nombre'] }}">
+    <td>{{ p['nombre'] }}</td>
+    <td>{{ p['cantidad'] }}</td>
+    <td>$ {{ p['precio_venta']|precio }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<!-- 🔹 Botón vender con posición fija -->
+<div style="position: sticky; bottom: 10px; background: #fff; padding: 10px; border-top: 1px solid #ddd;">
+    <button id="btn-vender" class="btn btn-warning w-100" disabled>🛒 Vender</button>
+</div>
+
+<script>
+// ✅ Buscador en tiempo real
+document.getElementById("buscador").addEventListener("keyup", function () {
+    let filtro = this.value.toLowerCase();
+    document.querySelectorAll("#tabla-precios tbody tr").forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(filtro) ? "" : "none";
+    });
+});
+
+// ✅ Selección de fila con click
+let filaSeleccionada = null;
+document.querySelectorAll("#tabla-precios tbody tr").forEach(row => {
+    row.addEventListener("click", function () {
+        if (filaSeleccionada) filaSeleccionada.classList.remove("table-primary");
+        filaSeleccionada = this;
+        filaSeleccionada.classList.add("table-primary");
+        document.getElementById("btn-vender").disabled = false;
+    });
+});
+
+// ✅ Acción del botón vender
+document.getElementById("btn-vender").addEventListener("click", function () {
+    if (!filaSeleccionada) return;
+    let nombre = filaSeleccionada.dataset.nombre;
+    let cantidad = prompt("¿Cuántas unidades deseas vender de " + nombre + "?", "1");
+
+    if (cantidad && !isNaN(cantidad) && cantidad > 0) {
+        window.location.href = "/vender/" + encodeURIComponent(nombre) + "/" + cantidad;
+    }
+});
+</script>
+{% endblock %}

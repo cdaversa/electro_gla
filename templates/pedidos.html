@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block title %}Pedidos Pendientes{% endblock %}
+{% block content %}
+<h2>Pedidos Pendientes</h2>
+{% if pedidos %}
+    {% for proveedor, lista in pedidos.items() %}
+        <h4>{{ proveedor }}</h4>
+        <a href="{{ enlaces[proveedor] }}" target="_blank" class="btn btn-success mb-2">📲 Enviar Pedido por WhatsApp</a>
+        <ul class="list-group mb-3">
+        {% for p in lista %}
+            <li class="list-group-item">{{ p['faltante'] }} {{ p['nombre'] }}</li>
+        {% endfor %}
+        </ul>
+    {% endfor %}
+{% else %}
+    <p>No hay pedidos pendientes 🎉</p>
+{% endif %}
+{% endblock %}

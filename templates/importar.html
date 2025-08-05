@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block title %}Importar Excel{% endblock %}
+{% block content %}
+<h2>Importar Productos desde Excel</h2>
+<form method="POST" enctype="multipart/form-data">
+    <input class="form-control mb-2" type="file" name="archivo" accept=".xlsx" required>
+    <button class="btn btn-success">Importar</button>
+</form>
+{% endblock %}

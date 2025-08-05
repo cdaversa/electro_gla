@@ -1,0 +1,105 @@
+{% extends "layout.html" %}
+{% block title %}Inventario{% endblock %}
+{% block content %}
+<h2>Inventario</h2>
+
+<!-- 🔹 Tarjetas resumen de totales -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="card bg-danger text-white text-center">
+            <div class="card-body">
+                <h5 class="card-title">Costo Total en Stock</h5>
+                <h3>$ {{ total_costo|precio }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-primary text-white text-center">
+            <div class="card-body">
+                <h5 class="card-title">Valor de Venta Total</h5>
+                <h3>$ {{ total_venta|precio }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card {% if ganancia < 0 %}bg-danger{% else %}bg-success{% endif %} text-white text-center">
+            <div class="card-body">
+                <h5 class="card-title">Ganancia Potencial</h5>
+                <h3>$ {{ ganancia|precio }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔹 Buscador dinámico -->
+<div class="input-group mb-3">
+    <input type="text" id="buscador" class="form-control" placeholder="🔍 Buscar producto o proveedor">
+    <button type="button" class="btn btn-secondary" onclick="limpiarBusqueda()">❌ Limpiar</button>
+</div>
+
+<a href="{{ url_for('agregar') }}" class="btn btn-success mb-3">➕ Agregar Producto</a>
+
+<!-- 🔹 Contenedor con scroll para mantener el botón siempre visible -->
+<div style="max-height: 450px; overflow-y: auto; border: 1px solid #ddd;">
+<table class="table table-striped">
+<thead class="table-dark" style="position: sticky; top: 0;">
+<tr>
+  <th>Nombre</th>
+  <th>Cantidad en Stock</th>
+  <th>Stock Mínimo</th>
+  <th>Precio Costo</th>
+  <th>% Ganancia</th>
+  <th>Precio Venta</th>
+  <th>Proveedor</th>
+  <th>Acciones</th>
+</tr>
+</thead>
+<tbody>
+{% for p in productos %}
+<tr class="{% if p['cantidad'] <= p['stock_minimo'] %}table-danger{% endif %}">
+  <td>{{ p['nombre'] }}</td>
+  <td>{{ p['cantidad'] }}</td>
+  <td>{{ p['stock_minimo'] }}</td>
+  <td>$ {{ p['precio_costo']|precio }}</td>
+  <td>{{ p['ganancia'] }}%</td>
+  <td>$ {{ p['precio_venta']|precio }}</td>
+  <td>{{ p['proveedor'] }}</td>
+  <td>
+    <a href="{{ url_for('editar', id=p['id']) }}" class="btn btn-sm btn-primary">Editar</a>
+    <a href="{{ url_for('eliminar', id=p['id']) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este producto?')">Eliminar</a>
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<script>
+// ✅ Restaurar búsqueda previa usando localStorage
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("buscador");
+    const filas = document.querySelectorAll("table tbody tr");
+
+    if (localStorage.getItem("busquedaInventario")) {
+        input.value = localStorage.getItem("busquedaInventario");
+    }
+
+    function filtrar() {
+        let filtro = input.value.toLowerCase();
+        filas.forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(filtro) ? "" : "none";
+        });
+        localStorage.setItem("busquedaInventario", filtro);
+    }
+
+    input.addEventListener("keyup", filtrar);
+    filtrar();
+});
+
+function limpiarBusqueda() {
+    localStorage.removeItem("busquedaInventario");
+    location.reload();
+}
+</script>
+
+{% endblock %}
