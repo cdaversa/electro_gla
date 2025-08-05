@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+{% block title %}Registro de Eventos{% endblock %}
+{% block content %}
+<h2>📜 Registro de Eventos</h2>
+
+<!-- 🔹 Filtro por rango de fechas -->
+<form method="get" class="row g-3 mb-3">
+  <div class="col-md-3">
+    <label>Desde:</label>
+    <input type="date" name="desde" class="form-control" value="{{ request.args.get('desde','') }}">
+  </div>
+  <div class="col-md-3">
+    <label>Hasta:</label>
+    <input type="date" name="hasta" class="form-control" value="{{ request.args.get('hasta','') }}">
+  </div>
+  <div class="col-md-2 align-self-end">
+    <button class="btn btn-primary w-100">Filtrar</button>
+  </div>
+  <div class="col-md-2 align-self-end">
+    <a href="{{ url_for('ver_logs') }}" class="btn btn-secondary w-100">Limpiar</a>
+  </div>
+</form>
+
+<!-- ✅ Mostrar total de ventas solo si hay registros -->
+{% if total_ventas and total_ventas > 0 %}
+<div class="alert alert-success">
+  💰 <strong>Total de ventas registradas:</strong> $ {{ "%.2f"|format(total_ventas) }}
+</div>
+{% endif %}
+
+<table class="table table-striped table-bordered">
+  <thead class="table-dark">
+    <tr>
+      <th>Fecha</th>
+      <th>Usuario</th>
+      <th>Módulo</th>
+      <th>Acción</th>
+      <th>Detalle</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for log in logs %}
+    <tr>
+      <td>{{ log['fecha'] }}</td>
+      <td>{{ log['usuario'] }}</td>
+      <td>{{ log['modulo'] }}</td>
+      <td>{{ log['accion'] }}</td>
+      <td>{{ log['detalle'] }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

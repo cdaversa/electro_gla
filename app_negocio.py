@@ -3,6 +3,7 @@ import sqlite3, os, json, shutil, urllib.parse
 import pandas as pd
 from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
+from zipfile import ZipFile   # ✅ Para crear backups en ZIP
 
 DB_NAME = "inventario.db"
 JSON_FILE = "productos_stock.json"
@@ -107,6 +108,46 @@ def migrate_from_json():
             conn.commit()
         conn.close()
 
+# --- CONEXIÓN DB LOGS ---
+LOG_DB = "logs.db"
+
+def get_connection_logs():
+    conn = sqlite3.connect(LOG_DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# --- Inicialización log.db ---
+
+def init_logs_table():
+    conn = get_connection_logs()
+    cur = conn.cursor()
+    # ✅ Crear la tabla solo con los campos necesarios
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario TEXT,
+            accion TEXT,
+            detalle TEXT,
+            fecha TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+# --- Registrar SOLO ventas ---
+def registrar_log(usuario, producto, cantidad, total):
+    """
+    Registra solo las ventas de productos en logs.db
+    """
+    conn = get_connection_logs()
+    cur = conn.cursor()
+    fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    detalle = f"Venta de {cantidad} x {producto} - Total ${total:.2f}"
+    cur.execute("INSERT INTO logs (usuario, accion, detalle, fecha) VALUES (?, ?, ?, ?)",
+                (usuario, "VENTA", detalle, fecha))
+    conn.commit()
+    conn.close()
+
 # --- FUNCIONES DE BD ---
 def obtener_productos():
     conn = get_connection()
@@ -139,6 +180,28 @@ def eliminar_producto(id):
     conn.execute("DELETE FROM productos WHERE id=?", (id,))
     conn.commit()
     conn.close()
+
+def registrar_venta_por_nombre(nombre, cantidad):
+    conn = get_connection()
+    producto = conn.execute("SELECT * FROM productos WHERE nombre=?", (nombre,)).fetchone()
+
+    if not producto:
+        conn.close()
+        return False  # Producto no existe
+
+    if producto["cantidad"] < cantidad:
+        conn.close()
+        return None  # No hay stock suficiente
+
+    # ✅ Si hay stock, calcular total y registrar en logs
+    total = producto["precio_costo"] * cantidad
+    registrar_log(session.get("usuario", "Sistema"), producto["nombre"], cantidad, total)
+
+    # ✅ Actualizar stock
+    conn.execute("UPDATE productos SET cantidad = cantidad - ? WHERE nombre=?", (cantidad, nombre))
+    conn.commit()
+    conn.close()
+    return True
 
 # --- PEDIDOS ---
 def generar_pedidos():
@@ -305,13 +368,16 @@ def lista_precios():
 def vender(nombre, cantidad):
     if "usuario" not in session:
         return redirect(url_for("login"))
-    conn = get_connection()
-    cur = conn.cursor()
-    # Restar solo si hay stock suficiente
-    cur.execute("UPDATE productos SET cantidad = cantidad - ? WHERE nombre=? AND cantidad >= ?", (cantidad, nombre, cantidad))
-    conn.commit()
-    conn.close()
-    flash(f"✅ Se vendieron {cantidad} unidades de {nombre}.", "success")
+
+    resultado = registrar_venta_por_nombre(nombre, cantidad)
+
+    if resultado is False:
+        flash(f"❌ El producto '{nombre}' no existe.", "danger")
+    elif resultado is None:
+        flash(f"⚠️ No hay stock suficiente para vender {cantidad} unidades de {nombre}.", "warning")
+    else:
+        flash(f"✅ Se vendieron {cantidad} unidades de {nombre}.", "success")
+
     return redirect(url_for("lista_precios"))
 
 @app.route("/exportar_precios")
@@ -335,14 +401,25 @@ def exportar_precios():
     return send_file(file_name, as_attachment=True)
 
 # --- BACKUP ---
+from zipfile import ZipFile
+
 @app.route("/backup")
 def backup():
     if "usuario" not in session:
         return redirect(url_for("login"))
+    
     fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_file = f"backup_{fecha}.db"
-    shutil.copy(DB_NAME, backup_file)
-    return send_file(backup_file, as_attachment=True)
+    backup_zip = f"backup_{fecha}.zip"
+
+    with ZipFile(backup_zip, "w") as zipf:
+        if os.path.exists(DB_NAME):
+            zipf.write(DB_NAME)
+        if os.path.exists(DB_SUELTOS):
+            zipf.write(DB_SUELTOS)
+        if os.path.exists(LOG_DB):  # ✅ Agregar logs.db al backup
+            zipf.write(LOG_DB)
+
+    return send_file(backup_zip, as_attachment=True)
 
 # --- IMPORTAR EXCEL ---
 @app.route("/importar", methods=["GET", "POST"])
@@ -527,7 +604,50 @@ def cambiar_password():
 
     return render_template("cambiar_password.html")
 
+# --- RUTA PARA LOGS ---
+
+@app.route("/logs")
+def ver_logs():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+
+    desde = request.args.get("desde")
+    hasta = request.args.get("hasta")
+
+    conn = get_connection_logs()
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # 🔹 Consulta filtrada
+    query = "SELECT * FROM logs WHERE 1=1"
+    params = []
+
+    if desde:
+        query += " AND fecha >= ?"
+        params.append(desde + " 00:00:00")
+    if hasta:
+        query += " AND fecha <= ?"
+        params.append(hasta + " 23:59:59")
+
+    query += " ORDER BY fecha DESC"
+    logs = cur.execute(query, params).fetchall()
+
+    # 🔹 Calcular total solo para registros de ventas
+    total_ventas = 0
+    for log in logs:
+        if log["accion"] == "VENTA":
+            # Extraer el número del detalle (formato: "Venta de X x Producto - Total $YYY")
+            import re
+            match = re.search(r"Total \$([\d.,]+)", log["detalle"])
+            if match:
+                total_ventas += float(match.group(1).replace(",", "."))
+
+    conn.close()
+
+    return render_template("logs.html", logs=logs, total_ventas=total_ventas)
+
 # --- MAIN ---
 if __name__ == "__main__":
     init_db()
+    init_logs_table()   # ✅ Inicializa la tabla logs
     app.run(debug=True)
