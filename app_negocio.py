@@ -441,10 +441,32 @@ def importar_excel():
 def exportar_excel():
     if "usuario" not in session:
         return redirect(url_for("login"))
-    df = pd.DataFrame(obtener_productos())
-    file_name = "productos_export.xlsx"
+
+    productos = obtener_productos()
+    data = []
+
+    # ✅ Construir el formato exacto para exportar
+    for p in productos:
+        data.append({
+            "Nombre": p["nombre"],
+            "Precio Costo": p["precio_costo"],
+            "% Ganancia": p["ganancia"] or 0,
+            "Cantidad": p["cantidad"],
+            "Stock Mínimo": p["stock_minimo"],
+            "Proveedor": p["proveedor"]
+        })
+
+    # ✅ Orden de columnas igual al esperado en la importación
+    df = pd.DataFrame(data, columns=["Nombre", "Precio Costo", "% Ganancia", "Cantidad", "Stock Mínimo", "Proveedor"])
+
+    # ✅ Nombre del archivo con fecha (opcional)
+    from datetime import datetime
+    file_name = f"productos_export_{datetime.now().strftime('%Y%m%d')}.xlsx"
+
+    # ✅ Exportar a Excel
     df.to_excel(file_name, index=False)
     return send_file(file_name, as_attachment=True)
+
 
 # --- RUTA DE LOGIN ---
 @app.route("/login", methods=["GET", "POST"])
