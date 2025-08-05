@@ -17,7 +17,8 @@
 </thead>
 <tbody>
 {% for p in lista %}
-<tr data-nombre="{{ p['nombre'] }}">
+<tr data-nombre="{{ p['nombre'] }}" data-stock="{{ p['cantidad'] }}" 
+    class="{% if p['cantidad'] == 0 %}table-danger{% endif %}">
     <td>{{ p['nombre'] }}</td>
     <td>{{ p['cantidad'] }}</td>
     <td>{{ p['precio_venta']|precio }}</td>
@@ -27,9 +28,9 @@
 </table>
 </div>
 
-<!-- 🔹 Botón vender con posición fija -->
+<!-- 🔹 Botón vender con color dinámico -->
 <div style="position: sticky; bottom: 10px; background: #fff; padding: 10px; border-top: 1px solid #ddd;">
-    <button id="btn-vender" class="btn btn-warning w-100" disabled>🛒 Vender</button>
+    <button id="btn-vender" class="btn btn-secondary w-100" disabled>🛒 Vender</button>
 </div>
 
 <script>
@@ -43,22 +44,44 @@ document.getElementById("buscador").addEventListener("keyup", function () {
 
 // ✅ Selección de fila con click
 let filaSeleccionada = null;
+const btnVender = document.getElementById("btn-vender");
+
 document.querySelectorAll("#tabla-precios tbody tr").forEach(row => {
     row.addEventListener("click", function () {
+        // Quitar selección anterior
         if (filaSeleccionada) filaSeleccionada.classList.remove("table-primary");
         filaSeleccionada = this;
         filaSeleccionada.classList.add("table-primary");
-        document.getElementById("btn-vender").disabled = false;
+
+        // ✅ Verificar stock
+        let stock = parseInt(filaSeleccionada.dataset.stock);
+        if (stock <= 0) {
+            btnVender.disabled = true;
+            btnVender.className = "btn btn-secondary w-100"; // 🔹 Gris cuando no hay stock
+        } else {
+            btnVender.disabled = false;
+            btnVender.className = "btn btn-success w-100"; // 🟢 Verde si hay stock
+        }
     });
 });
 
-// ✅ Acción del botón vender
-document.getElementById("btn-vender").addEventListener("click", function () {
+// ✅ Acción del botón vender con validación
+btnVender.addEventListener("click", function () {
     if (!filaSeleccionada) return;
+    let stock = parseInt(filaSeleccionada.dataset.stock);
+    if (stock <= 0) {
+        alert("⚠️ No hay stock disponible para este producto.");
+        return;
+    }
+
     let nombre = filaSeleccionada.dataset.nombre;
     let cantidad = prompt("¿Cuántas unidades deseas vender de " + nombre + "?", "1");
 
     if (cantidad && !isNaN(cantidad) && cantidad > 0) {
+        if (cantidad > stock) {
+            alert("⚠️ No puedes vender más de lo que hay en stock (" + stock + ").");
+            return;
+        }
         window.location.href = "/vender/" + encodeURIComponent(nombre) + "/" + cantidad;
     }
 });
