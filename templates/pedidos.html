@@ -1,19 +1,32 @@
 {% extends "layout.html" %}
 {% block title %}Pedidos Pendientes{% endblock %}
 {% block content %}
-<h2>Pedidos Pendientes</h2>
+
+<h2>📦 Pedidos Pendientes</h2>
+
 {% if pedidos %}
-    {% for proveedor, lista in pedidos.items() %}
+    {% for proveedor, lista in pedidos|dictsort %}
         <h4>{{ proveedor }}</h4>
-        <a href="{{ enlaces[proveedor] }}" target="_blank" class="btn btn-success mb-2">📲 Enviar Pedido por WhatsApp</a>
+
+        <!-- ✅ Botón WhatsApp con icono oficial y siempre visible -->
+        <a href="{{ enlaces[proveedor] }}" 
+           target="_blank" 
+           class="btn btn-success btn-whatsapp mb-2">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
+                 alt="WhatsApp" width="20" 
+                 style="vertical-align: middle; margin-right:5px;">
+            Enviar Pedido por WhatsApp
+        </a>
+
         <ul class="list-group mb-3">
         {% for p in lista %}
             <li class="list-group-item">
                 {{ p['faltante'] }} {{ p['nombre'] }} 
-                <span class="float-end"> $ {{ (p['faltante'] * p['precio_costo'])|precio }} </span>
+                <span class="float-end">{{ (p['faltante'] * p['precio_costo'])|precio }}</span>
             </li>
         {% endfor %}
         </ul>
+
         <!-- ✅ Total por proveedor -->
         <div class="alert alert-info">
             <strong>Total pedido {{ proveedor }}:</strong> $ {{ totales[proveedor]|precio }}
@@ -27,4 +40,18 @@
 {% else %}
     <p>No hay pedidos pendientes 🎉</p>
 {% endif %}
+
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+/* ✅ Fuerza que el botón nunca se oculte */
+.btn-whatsapp {
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: none !important;
+    font-weight: bold;
+}
+</style>
 {% endblock %}
