@@ -5,47 +5,116 @@
 <h2>📦 Pedidos Pendientes</h2>
 
 {% if pedidos %}
-    {% for proveedor, lista in pedidos|dictsort %}
-        <h4>{{ proveedor }}</h4>
+  {% for proveedor, lista in pedidos|dictsort %}
+    <h4>{{ proveedor }}</h4>
 
-        <!-- ✅ Botón WhatsApp con icono oficial y siempre visible -->
-        <a href="{{ enlaces[proveedor] }}" 
-           target="_blank" 
-           class="btn btn-success btn-whatsapp mb-2">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
-                 alt="WhatsApp" width="20" 
-                 style="vertical-align: middle; margin-right:5px;">
-            Enviar Pedido por WhatsApp
-        </a>
+    <!-- ✅ Botón WhatsApp dinámico con enlace base generado por el backend -->
+    <a href="{{ enlaces[proveedor] }}" 
+       target="_blank" 
+       class="btn btn-success btn-whatsapp mb-2 enviar-wpp" 
+       data-proveedor="{{ proveedor|e }}">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
+             alt="WhatsApp" width="20" 
+             style="vertical-align: middle; margin-right:5px;">
+        Enviar Pedido por WhatsApp
+    </a>
 
-        <ul class="list-group mb-3">
-        {% for p in lista %}
-            <li class="list-group-item">
-                {{ p['faltante'] }} {{ p['nombre'] }} 
-                <span class="float-end">{{ (p['faltante'] * p['precio_costo'])|precio }}</span>
-            </li>
-        {% endfor %}
-        </ul>
-
-        <!-- ✅ Total por proveedor -->
-        <div class="alert alert-info">
-            <strong>Total pedido {{ proveedor }}:</strong> $ {{ totales[proveedor]|precio }}
-        </div>
+    <!-- ✅ Lista de productos con checkboxes -->
+    <ul class="list-group mb-3">
+    {% for p in lista %}
+        {% set subtotal = p['faltante'] * p['precio_costo'] %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <input type="checkbox" class="form-check-input me-2 producto-checkbox" 
+                       data-proveedor="{{ proveedor }}" 
+                       data-subtotal="{{ subtotal }}" checked>
+                {{ p['faltante'] }} {{ p['nombre'] }}
+            </div>
+            <span>$ {{ '%.2f'|format(subtotal) }}</span>
+        </li>
     {% endfor %}
+    </ul>
 
-    <!-- ✅ Total general de todos los pedidos -->
-    <div class="alert alert-primary">
-        <h4>💰 Total general de todos los pedidos: $ {{ total_general|precio }}</h4>
+    <!-- ✅ Total por proveedor -->
+    <div class="alert alert-info total-proveedor">
+        <strong>Total pedido {{ proveedor }}:</strong> 
+        <span class="monto-proveedor">
+            $ {{ totales[proveedor]|precio }}
+        </span>
     </div>
+  {% endfor %}
+
+  <!-- ✅ Total general -->
+  <div class="alert alert-primary">
+      <h4>💰 Total general de todos los pedidos: 
+        <span id="total-general">$ {{ total_general|precio }}</span>
+      </h4>
+  </div>
 {% else %}
-    <p>No hay pedidos pendientes 🎉</p>
+  <p>No hay pedidos pendientes 🎉</p>
 {% endif %}
+
+<!-- ✅ JS de totales y WhatsApp dinámico -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const checkboxes = document.querySelectorAll(".producto-checkbox");
+
+    function recalcularTotales() {
+        const totalesPorProveedor = {};
+        checkboxes.forEach(cb => {
+            const proveedor = cb.dataset.proveedor;
+            const subtotal = parseFloat(cb.dataset.subtotal);
+            if (cb.checked) {
+                if (!totalesPorProveedor[proveedor]) {
+                    totalesPorProveedor[proveedor] = 0;
+                }
+                totalesPorProveedor[proveedor] += subtotal;
+            }
+        });
+
+        document.querySelectorAll(".total-proveedor").forEach(div => {
+            const proveedor = div.previousElementSibling.querySelector("input").dataset.proveedor;
+            const total = totalesPorProveedor[proveedor] || 0;
+            div.querySelector(".monto-proveedor").textContent = `$${total.toLocaleString("es-AR", {minimumFractionDigits: 2})}`;
+        });
+
+        const totalGeneral = Object.values(totalesPorProveedor).reduce((a, b) => a + b, 0);
+        document.getElementById("total-general").textContent = `$${totalGeneral.toLocaleString("es-AR", {minimumFractionDigits: 2})}`;
+    }
+
+    checkboxes.forEach(cb => cb.addEventListener("change", recalcularTotales));
+    recalcularTotales();
+
+    // ✅ WhatsApp dinámico (sobrescribe href)
+    document.querySelectorAll(".enviar-wpp").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const proveedor = btn.dataset.proveedor;
+            const productos = Array.from(document.querySelectorAll(`.producto-checkbox[data-proveedor="${proveedor}"]`))
+                .filter(cb => cb.checked)
+                .map(cb => {
+                    const texto = cb.parentElement.textContent.trim();
+                    return `• ${texto}`;
+                });
+
+            if (productos.length === 0) {
+                alert("⚠️ No hay productos seleccionados para este proveedor.");
+                e.preventDefault(); // cancelar enlace
+                return;
+            }
+
+            const mensaje = encodeURIComponent(`📦 *Pedido para ${proveedor}*\n` + productos.join("\n"));
+            const urlBase = "https://wa.me/";
+            const numero = btn.getAttribute("href").replace(urlBase, "").split("?")[0];
+            btn.href = `${urlBase}${numero}?text=${mensaje}`;
+        });
+    });
+});
+</script>
 
 {% endblock %}
 
 {% block extra_styles %}
 <style>
-/* ✅ Fuerza que el botón nunca se oculte */
 .btn-whatsapp {
     display: inline-block !important;
     opacity: 1 !important;

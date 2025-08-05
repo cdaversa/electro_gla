@@ -62,7 +62,7 @@
   <td>{{ p['stock_minimo'] }}</td>
   <td>$ {{ p['precio_costo']|precio }}</td>
   <td>{{ p['ganancia'] }}%</td>
-  <td>{{ p['precio_venta']|precio }}</td>
+  <td>$ {{ p['precio_venta']|precio }}</td>
   <td>{{ p['proveedor'] }}</td>
   <td>
     <a href="{{ url_for('editar', id=p['id']) }}" class="btn btn-sm btn-primary">Editar</a>

@@ -21,7 +21,7 @@
     class="{% if p['cantidad'] == 0 %}table-danger{% endif %}">
     <td>{{ p['nombre'] }}</td>
     <td>{{ p['cantidad'] }}</td>
-    <td>{{ p['precio_venta']|precio }}</td>
+    <td>$ {{ p['precio_venta']|precio }}</td>
 </tr>
 {% endfor %}
 </tbody>
