@@ -8,10 +8,22 @@
         <a href="{{ enlaces[proveedor] }}" target="_blank" class="btn btn-success mb-2">📲 Enviar Pedido por WhatsApp</a>
         <ul class="list-group mb-3">
         {% for p in lista %}
-            <li class="list-group-item">{{ p['faltante'] }} {{ p['nombre'] }}</li>
+            <li class="list-group-item">
+                {{ p['faltante'] }} {{ p['nombre'] }} 
+                <span class="float-end"> $ {{ (p['faltante'] * p['precio_costo'])|precio }} </span>
+            </li>
         {% endfor %}
         </ul>
+        <!-- ✅ Total por proveedor -->
+        <div class="alert alert-info">
+            <strong>Total pedido {{ proveedor }}:</strong> $ {{ totales[proveedor]|precio }}
+        </div>
     {% endfor %}
+
+    <!-- ✅ Total general de todos los pedidos -->
+    <div class="alert alert-primary">
+        <h4>💰 Total general de todos los pedidos: $ {{ total_general|precio }}</h4>
+    </div>
 {% else %}
     <p>No hay pedidos pendientes 🎉</p>
 {% endif %}

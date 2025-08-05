@@ -259,9 +259,24 @@ def eliminar(id):
 def pedidos():
     if "usuario" not in session:
         return redirect(url_for("login"))
+
     pedidos = generar_pedidos()
-    enlaces = {prov: f"https://wa.me/?text={generar_mensaje_whatsapp(prov, lista)}" for prov, lista in pedidos.items()}
-    return render_template("pedidos.html", pedidos=pedidos, enlaces=enlaces)
+    enlaces = {}
+    totales = {}      # 🔹 Nuevo diccionario para totales por proveedor
+    total_general = 0 # 🔹 Total general de todos los pedidos
+
+    for prov, lista in pedidos.items():
+        enlaces[prov] = f"https://wa.me/?text={generar_mensaje_whatsapp(prov, lista)}"
+        total_prov = sum(p["faltante"] * p["precio_costo"] for p in lista)
+        totales[prov] = total_prov
+        total_general += total_prov
+
+    return render_template("pedidos.html",
+                           pedidos=pedidos,
+                           enlaces=enlaces,
+                           totales=totales,
+                           total_general=total_general)
+
 
 # --- LISTA DE PRECIOS ---
 @app.route("/lista_precios")

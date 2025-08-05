@@ -18,7 +18,7 @@ git commit -m "%msg%"
 
 :: 4. Subir cambios a GitHub
 echo 🚀 Subiendo cambios a GitHub...
-git push origin master
+git push origin main
 
 echo ✅ ¡Deploy completado correctamente!
 pause
