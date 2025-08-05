@@ -6,7 +6,7 @@
 <input type="text" id="buscador" class="form-control mb-3" placeholder="🔍 Buscar producto...">
 
 <!-- 🔹 Contenedor con scroll -->
-<div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd;">
+<div style="max-height: 70vh; overflow-y: auto; border: 1px solid #ddd;">
 <table class="table table-striped" id="tabla-precios">
 <thead class="table-dark" style="position: sticky; top: 0;">
 <tr>
@@ -20,7 +20,7 @@
 <tr data-nombre="{{ p['nombre'] }}">
     <td>{{ p['nombre'] }}</td>
     <td>{{ p['cantidad'] }}</td>
-    <td>$ {{ p['precio_venta']|precio }}</td>
+    <td>{{ p['precio_venta']|precio }}</td>
 </tr>
 {% endfor %}
 </tbody>
