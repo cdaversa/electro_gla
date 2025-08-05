@@ -15,12 +15,13 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('lista_precios') }}">Lista de Precios</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('inventario') }}">Inventario</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('pedidos') }}">Pedidos</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('importar_excel') }}">Importar</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('backup') }}">Backup</a></li>
-      </ul>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('lista_precios') }}">Lista de Precios</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('inventario') }}">Inventario</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('pedidos') }}">Pedidos</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('importar_excel') }}">Importar</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('exportar_excel') }}">Exportar Excel</a></li> <!-- ✅ AGREGADO -->
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('backup') }}">Backup</a></li>
+</ul>
       <ul class="navbar-nav ms-auto"> <!-- ✅ Links de usuario a la derecha -->
         {% if session.get('usuario') %}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('cambiar_password') }}">Cambiar Contraseña</a></li>
