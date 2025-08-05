@@ -110,7 +110,7 @@ def migrate_from_json():
 # --- FUNCIONES DE BD ---
 def obtener_productos():
     conn = get_connection()
-    productos = conn.execute("SELECT * FROM productos").fetchall()
+    productos = conn.execute("SELECT * FROM productos ORDER BY LOWER(nombre)").fetchall()
     conn.close()
     return productos
 
