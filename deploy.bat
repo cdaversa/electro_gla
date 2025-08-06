@@ -6,7 +6,7 @@ echo.
 
 :: 1. Traer cambios remotos
 echo 🔄 Haciendo pull de GitHub...
-git pull origin master
+git pull origin main
 echo.
 
 :: 2. Pedir mensaje del commit
