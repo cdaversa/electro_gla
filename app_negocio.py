@@ -316,7 +316,7 @@ def eliminar(id):
     if "usuario" not in session:
         return redirect(url_for("login"))
     eliminar_producto(id)
-    return redirect(url_for("index"))
+    return redirect(url_for("inventario"))
 
 @app.route("/pedidos")
 def pedidos():
