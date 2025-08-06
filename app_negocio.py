@@ -285,7 +285,7 @@ def agregar():
             request.form["proveedor"],
             float(request.form["ganancia"].replace(',','.'))
         )
-        return redirect(url_for("index"))
+        return redirect(url_for("inventario"))
     return render_template("agregar.html")
 
 @app.route("/editar/<int:id>", methods=["GET","POST"])
