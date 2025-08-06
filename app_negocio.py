@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, send_file, flash, session
 import sqlite3, os, json, shutil, urllib.parse
 import pandas as pd
+import pytz
 from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
 from zipfile import ZipFile   # ✅ Para crear backups en ZIP
@@ -136,12 +137,10 @@ def init_logs_table():
 
 # --- Registrar SOLO ventas ---
 def registrar_log(usuario, producto, cantidad, total):
-    """
-    Registra solo las ventas de productos en logs.db
-    """
     conn = get_connection_logs()
     cur = conn.cursor()
-    fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    zona_arg = pytz.timezone("America/Argentina/Buenos_Aires")
+    fecha = datetime.now(zona_arg).strftime("%Y-%m-%d %H:%M:%S")
     detalle = f"Venta de {cantidad} x {producto} - Total ${total:.2f}"
     cur.execute("INSERT INTO logs (usuario, accion, detalle, fecha) VALUES (?, ?, ?, ?)",
                 (usuario, "VENTA", detalle, fecha))
