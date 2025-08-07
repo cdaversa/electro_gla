@@ -1,88 +1,83 @@
-{% extends "layout.html" %}
-{% block title %}Editar Producto{% endblock %}
-{% block content %}
-<h2>Editar Producto</h2>
-
-<form method="post">
+<!-- editar.html -->
+<form method="post" action="/editar/{{ p['id'] }}">
+  <div class="modal-header">
+    <h5 class="modal-title">Editar Producto</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
     <div class="mb-3">
-        <label for="nombre" class="form-label">Nombre</label>
-        <input type="text" class="form-control" name="nombre" id="nombre" value="{{ p['nombre'] }}" required>
+      <label for="nombre" class="form-label">Nombre</label>
+      <input type="text" class="form-control" name="nombre" id="nombre" value="{{ p['nombre'] }}" required>
     </div>
 
     <div class="mb-3">
-        <label for="cantidad" class="form-label">Cantidad</label>
-        <input type="number" class="form-control" name="cantidad" id="cantidad" value="{{ p['cantidad'] }}" required>
+      <label for="cantidad" class="form-label">Cantidad</label>
+      <input type="number" class="form-control" name="cantidad" id="cantidad" value="{{ p['cantidad'] }}" required>
     </div>
 
     <div class="mb-3">
-        <label for="stock_minimo" class="form-label">Stock Mínimo</label>
-        <input type="number" class="form-control" name="stock_minimo" id="stock_minimo" value="{{ p['stock_minimo'] }}" required>
+      <label for="stock_minimo" class="form-label">Stock Mínimo</label>
+      <input type="number" class="form-control" name="stock_minimo" id="stock_minimo" value="{{ p['stock_minimo'] }}" required>
     </div>
 
     <div class="mb-3">
-        <label for="precio_costo" class="form-label">Precio de Costo</label>
-        <div class="input-group">
-            <span class="input-group-text">$</span>
-            <input type="text" class="form-control" name="precio_costo" id="precio_costo" value="{{ p['precio_costo']|precio }}" required>
-        </div>
+      <label for="precio_costo" class="form-label">Precio de Costo</label>
+      <div class="input-group">
+        <span class="input-group-text">$</span>
+        <input type="text" class="form-control" name="precio_costo" id="precio_costo" value="{{ p['precio_costo']|precio_sin_signo }}" required>
+      </div>
     </div>
 
     <div class="mb-3">
-        <label for="ganancia" class="form-label">% Ganancia</label>
-        <input type="text" class="form-control" name="ganancia" id="ganancia" value="{{ p['ganancia'] }}">
+      <label for="ganancia" class="form-label">% Ganancia</label>
+      <input type="text" class="form-control" name="ganancia" id="ganancia" value="{{ p['ganancia'] }}">
     </div>
 
     <div class="mb-3">
-        <label for="precio_venta" class="form-label">Precio de Venta (Calculado)</label>
-        <div class="input-group">
-            <span class="input-group-text">$</span>
-            <input type="text" class="form-control" id="precio_venta" readonly>
-        </div>
+      <label for="precio_venta" class="form-label">Precio de Venta (Calculado)</label>
+      <div class="input-group">
+        <span class="input-group-text">$</span>
+        <input type="text" class="form-control" id="precio_venta" readonly>
+      </div>
     </div>
 
     <div class="mb-3">
-        <label for="proveedor" class="form-label">Proveedor</label>
-        <input type="text" class="form-control" name="proveedor" id="proveedor" value="{{ p['proveedor'] }}">
+      <label for="proveedor" class="form-label">Proveedor</label>
+      <input type="text" class="form-control" name="proveedor" id="proveedor" value="{{ p['proveedor'] }}">
     </div>
-
+  </div>
+  <div class="modal-footer">
     <button type="submit" class="btn btn-success">💾 Guardar</button>
-    <a href="{{ url_for('inventario') }}" class="btn btn-secondary">Cancelar</a>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+  </div>
 </form>
 
 <script>
-// ✅ Conversión robusta de números (soporta formatos es-AR e inglés)
 function parsearNumero(valor) {
     if (!valor) return NaN;
     valor = valor.toString().trim();
-
-    // Si tiene solo punto decimal (inglés)
     if (/^\d+(\.\d+)?$/.test(valor)) {
         return parseFloat(valor);
     }
-    // Si tiene formato argentino (1.234,56) → eliminar miles y reemplazar coma
     return parseFloat(valor.replace(/\./g, "").replace(",", "."));
 }
 
-// ✅ Calcular precio de venta dinámicamente
 function calcularPrecioVenta() {
-    let costo = parsearNumero(document.getElementById("precio_costo").value);
-    let ganancia = parsearNumero(document.getElementById("ganancia").value);
-
+    let costo = parsearNumero(document.getElementById("precio_costo")?.value);
+    let ganancia = parsearNumero(document.getElementById("ganancia")?.value);
     if (!isNaN(costo) && !isNaN(ganancia)) {
         let precioVenta = costo * (1 + (ganancia / 100));
-        document.getElementById("precio_venta").value =
-            precioVenta.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    } else {
+        if (document.getElementById("precio_venta")) {
+            document.getElementById("precio_venta").value = precioVenta.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+    } else if (document.getElementById("precio_venta")) {
         document.getElementById("precio_venta").value = "";
     }
 }
 
-// ✅ Eventos para recalcular automáticamente
-document.getElementById("precio_costo").addEventListener("input", calcularPrecioVenta);
-document.getElementById("ganancia").addEventListener("input", calcularPrecioVenta);
-
-// ✅ Calcular al cargar la página
-calcularPrecioVenta();
+setTimeout(() => {
+  calcularPrecioVenta();
+  document.getElementById("precio_costo")?.addEventListener("input", calcularPrecioVenta);
+  document.getElementById("ganancia")?.addEventListener("input", calcularPrecioVenta);
+}, 100);
 </script>
-
-{% endblock %}

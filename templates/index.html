@@ -6,7 +6,7 @@
 <!-- 🔹 Tarjetas resumen de totales -->
 <div class="row mb-3">
     <div class="col-md-4">
-        <div class="card bg-danger text-white text-center">
+        <div class="card resumen-card bg-danger text-white text-center">
             <div class="card-body">
                 <h5 class="card-title">Costo Total en Stock</h5>
                 <h3>$ {{ total_costo|precio }}</h3>
@@ -14,7 +14,7 @@
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card bg-primary text-white text-center">
+        <div class="card resumen-card bg-primary text-white text-center">
             <div class="card-body">
                 <h5 class="card-title">Valor de Venta Total</h5>
                 <h3>$ {{ total_venta|precio }}</h3>
@@ -22,7 +22,7 @@
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card {% if ganancia < 0 %}bg-danger{% else %}bg-success{% endif %} text-white text-center">
+        <div class="card resumen-card {% if ganancia < 0 %}bg-danger{% else %}bg-success{% endif %} text-white text-center">
             <div class="card-body">
                 <h5 class="card-title">Ganancia Potencial</h5>
                 <h3>$ {{ ganancia|precio }}</h3>
@@ -37,7 +37,8 @@
     <button type="button" class="btn btn-secondary" onclick="limpiarBusqueda()">❌ Limpiar</button>
 </div>
 
-<a href="{{ url_for('agregar') }}" class="btn btn-success mb-3">➕ Agregar Producto</a>
+<!-- Botón Agregar con modal -->
+<button class="btn btn-success mb-3" onclick="abrirModalAgregar()">➕ Agregar Producto</button>
 
 <!-- 🔹 Contenedor con scroll para mantener el botón siempre visible -->
 <div style="max-height: 55vh; overflow-y: auto; border: 1px solid #ddd;">
@@ -65,7 +66,7 @@
   <td>$ {{ p['precio_venta']|precio }}</td>
   <td>{{ p['proveedor'] }}</td>
   <td>
-    <a href="{{ url_for('editar', id=p['id']) }}" class="btn btn-sm btn-primary">Editar</a>
+    <button class="btn btn-sm btn-primary" onclick="abrirModalEditar({{ p['id'] }})">Editar</button>
     <a href="{{ url_for('eliminar', id=p['id']) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este producto?')">Eliminar</a>
   </td>
 </tr>
@@ -75,7 +76,6 @@
 </div>
 
 <script>
-// ✅ Restaurar búsqueda previa usando localStorage
 document.addEventListener("DOMContentLoaded", function () {
     const input = document.getElementById("buscador");
     const filas = document.querySelectorAll("table tbody tr");
@@ -100,6 +100,74 @@ function limpiarBusqueda() {
     localStorage.removeItem("busquedaInventario");
     location.reload();
 }
+
+function abrirModalAgregar() {
+  fetch(`/agregar`)
+    .then(response => response.text())
+    .then(html => {
+      document.getElementById('contenidoAgregar').innerHTML = html;
+      new bootstrap.Modal(document.getElementById('modalAgregar')).show();
+      setTimeout(() => {
+        calcularPrecioVenta();
+        document.getElementById("precio_costo")?.addEventListener("input", calcularPrecioVenta);
+        document.getElementById("ganancia")?.addEventListener("input", calcularPrecioVenta);
+      }, 200);
+    });
+}
+
+function abrirModalEditar(id) {
+  fetch(`/editar/${id}`)
+    .then(response => response.text())
+    .then(html => {
+      document.getElementById('contenidoEditar').innerHTML = html;
+      new bootstrap.Modal(document.getElementById('modalEditar')).show();
+      setTimeout(() => {
+        calcularPrecioVenta();
+        document.getElementById("precio_costo")?.addEventListener("input", calcularPrecioVenta);
+        document.getElementById("ganancia")?.addEventListener("input", calcularPrecioVenta);
+      }, 200);
+    });
+}
+
+function parsearNumero(valor) {
+    if (!valor) return NaN;
+    valor = valor.toString().trim();
+    if (/^\d+(\.\d+)?$/.test(valor)) {
+        return parseFloat(valor);
+    }
+    return parseFloat(valor.replace(/\./g, "").replace(",", "."));
+}
+
+function calcularPrecioVenta() {
+    let costo = parsearNumero(document.getElementById("precio_costo")?.value);
+    let ganancia = parsearNumero(document.getElementById("ganancia")?.value);
+    if (!isNaN(costo) && !isNaN(ganancia)) {
+        let precioVenta = costo * (1 + (ganancia / 100));
+        if (document.getElementById("precio_venta")) {
+            document.getElementById("precio_venta").value = precioVenta.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+    } else if (document.getElementById("precio_venta")) {
+        document.getElementById("precio_venta").value = "";
+    }
+}
 </script>
+
+<!-- Modal Agregar Producto -->
+<div class="modal fade" id="modalAgregar" tabindex="-1" aria-labelledby="modalAgregarLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" id="contenidoAgregar">
+      <!-- Contenido cargado dinámicamente -->
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Producto -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" id="contenidoEditar">
+      <!-- Contenido cargado dinámicamente -->
+    </div>
+  </div>
+</div>
 
 {% endblock %}

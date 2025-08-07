@@ -20,6 +20,13 @@ def format_precio(value):
     except:
         return value
 
+@app.template_filter('precio_sin_signo')
+def format_precio_sin_signo(value):
+    try:
+        return f"{float(value):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    except:
+        return value
+
 # --- FUNCIÓN PARA CONVERTIR PRECIOS A FLOAT ---
 def normalizar_precio(valor):
     """

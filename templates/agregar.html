@@ -1,56 +1,57 @@
-{% extends "layout.html" %}
-{% block title %}Agregar Producto{% endblock %}
-{% block content %}
-<h2>Agregar Producto</h2>
-
-<form method="post">
+<form method="POST" action="{{ url_for('agregar') }}">
+  <div class="modal-header">
+    <h5 class="modal-title">Agregar Producto</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
     <div class="mb-3">
-        <label class="form-label">Nombre</label>
-        <input type="text" name="nombre" class="form-control" required>
+      <label for="nombre" class="form-label">Nombre</label>
+      <input type="text" class="form-control" name="nombre" id="nombre" required>
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Cantidad</label>
-        <input type="number" name="cantidad" class="form-control" required>
+      <label for="cantidad" class="form-label">Cantidad</label>
+      <input type="number" class="form-control" name="cantidad" id="cantidad" required>
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Stock Mínimo</label>
-        <input type="number" name="stock_minimo" class="form-control" required>
+      <label for="stock_minimo" class="form-label">Stock Mínimo</label>
+      <input type="number" class="form-control" name="stock_minimo" id="stock_minimo" required>
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Precio de Costo</label>
-        <div class="input-group">
-            <span class="input-group-text">$</span>
-            <input type="text" name="precio_costo" id="precio_costo" class="form-control" required>
-        </div>
+      <label for="precio_costo" class="form-label">Precio de Costo</label>
+      <div class="input-group">
+        <span class="input-group-text">$</span>
+        <input type="text" class="form-control" name="precio_costo" id="precio_costo" required>
+      </div>
     </div>
 
     <div class="mb-3">
-        <label class="form-label">% Ganancia</label>
-        <input type="text" name="ganancia" id="ganancia" class="form-control">
+      <label for="ganancia" class="form-label">% Ganancia</label>
+      <input type="text" class="form-control" name="ganancia" id="ganancia">
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Precio de Venta (Calculado)</label>
-        <div class="input-group">
-            <span class="input-group-text">$</span>
-            <input type="text" id="precio_venta" class="form-control" readonly>
-        </div>
+      <label for="precio_venta" class="form-label">Precio de Venta (Calculado)</label>
+      <div class="input-group">
+        <span class="input-group-text">$</span>
+        <input type="text" class="form-control" id="precio_venta" readonly>
+      </div>
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Proveedor</label>
-        <input type="text" name="proveedor" class="form-control">
+      <label for="proveedor" class="form-label">Proveedor</label>
+      <input type="text" class="form-control" name="proveedor" id="proveedor">
     </div>
-
-    <button type="submit" class="btn btn-success">➕ Agregar</button>
-    <a href="{{ url_for('inventario') }}" class="btn btn-secondary">Cancelar</a>
+  </div>
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+  </div>
 </form>
 
 <script>
-// ✅ Conversión robusta de números (soporta formatos es-AR e inglés)
 function parsearNumero(valor) {
     if (!valor) return NaN;
     valor = valor.toString().trim();
@@ -60,22 +61,22 @@ function parsearNumero(valor) {
     return parseFloat(valor.replace(/\./g, "").replace(",", "."));
 }
 
-// ✅ Calcular precio de venta dinámicamente
 function calcularPrecioVenta() {
-    let costo = parsearNumero(document.getElementById("precio_costo").value);
-    let ganancia = parsearNumero(document.getElementById("ganancia").value);
-
+    let costo = parsearNumero(document.getElementById("precio_costo")?.value);
+    let ganancia = parsearNumero(document.getElementById("ganancia")?.value);
     if (!isNaN(costo) && !isNaN(ganancia)) {
         let precioVenta = costo * (1 + (ganancia / 100));
-        document.getElementById("precio_venta").value =
-            precioVenta.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    } else {
+        if (document.getElementById("precio_venta")) {
+            document.getElementById("precio_venta").value = precioVenta.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+    } else if (document.getElementById("precio_venta")) {
         document.getElementById("precio_venta").value = "";
     }
 }
 
-// ✅ Eventos para recalcular automáticamente
-document.getElementById("precio_costo").addEventListener("input", calcularPrecioVenta);
-document.getElementById("ganancia").addEventListener("input", calcularPrecioVenta);
+setTimeout(() => {
+  calcularPrecioVenta();
+  document.getElementById("precio_costo")?.addEventListener("input", calcularPrecioVenta);
+  document.getElementById("ganancia")?.addEventListener("input", calcularPrecioVenta);
+}, 100);
 </script>
-{% endblock %}
